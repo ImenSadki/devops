@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  # Backend Node.js
+  backend:
+    build:
+      context: ./nodejs-express-sequelize-mysql-master
+    container_name: backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db  # Utilisez db comme hôte, car c'est le service de la base de données
+      - DB_USER=root
+      - DB_PASSWORD=0000
+      - DB_NAME=projet_dev
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./react-crud-web-api-master
+    container_name: frontend
+    ports:
+      - "8080:80"  # Changement du port 80 à 8080 pour éviter un conflit
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  # Base de données MySQL
+  db:
+    image: mysql:8.0
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: 0000  # Mot de passe root
+      MYSQL_DATABASE: projet_dev
+    ports:
+      - "3307:3306"  # Le port local 3307 est mappé au port 3306 du conteneur MySQL
+    volumes:
+      - db_data:/var/lib/mysql  # Volume pour persister les données
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
