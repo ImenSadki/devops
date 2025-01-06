@@ -1,50 +1,29 @@
 pipeline {
     agent any
-
+    
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // Configurez les credentials dans Jenkins
-        DOCKERHUB_USERNAME = 'votre-nom-utilisateur-dockerhub'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
     }
-
+    
     stages {
-        stage('Cloner le dépôt') {
+        stage('Checkout') {
             steps {
-                echo "Clonage du dépôt Git..."
-                git branch: 'main', url: 'https://github.com/ImenSadki/devops.git'
+                checkout scm
             }
         }
-        stage('Construire les images Docker') {
+        
+        stage('Docker Login') {
             steps {
-                echo "Construction des images Docker..."
-                sh 'docker-compose build'
+                bat 'echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin'
             }
         }
-        stage('Pousser les images Docker') {
-            steps {
-                echo "Push des images Docker vers Docker Hub..."
-                script {
-                    sh """
-                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-                    docker-compose push
-                    """
-                }
-            }
-        }
-        stage('Déployer avec Docker Compose') {
-            steps {
-                echo "Déploiement des conteneurs..."
-                sh 'docker-compose up -d'
-            }
-        }
+        
+        // Ajoutez ici vos autres stages (build, test, deploy, etc.)
     }
-
+    
     post {
-        success {
-            echo "Pipeline exécuté avec succès !"
-        }
-        failure {
-            echo "Le pipeline a échoué !"
+        always {
+            bat 'docker logout'
         }
     }
 }
-
